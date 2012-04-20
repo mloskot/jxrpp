@@ -12,12 +12,14 @@
 #define JXRCXX_IMPLEMENTATION_WIC_ENABLED
 #endif
 
-#include <guiddef.h>
+#include <cstddef>
 #include <memory>
 #include <vector>
+#include <stdexcept>
 
-namespace jxrcxx
-{
+// TODO: replace size_t with ptrdiff_t
+
+namespace jxrcxx {
 
 struct codec
 {
@@ -176,6 +178,7 @@ class decoder
 public:
 	explicit decoder(codec::tag const& codec);
 
+	// TODO: rename to setup, take filename AND codec type
 	void initialise(char const* const filename);
 	std::size_t stride(std::size_t const width, std::size_t const bits_per_pixel) const;
 	std::size_t frame_count() const;
@@ -192,6 +195,27 @@ private:
 	typedef std::shared_ptr<detail::decoder_base> strategy_ptr;
 	strategy_ptr strategy_;
 };
+
+// TODO
+class encoder
+{
+public:
+	//explicit encoder(codec::tag const& codec);
+
+private:
+	// noncopyable
+	//encoder(decoder const& other);
+	//encoder& operator=(decoder const& other);
+
+	//typedef std::shared_ptr<detail::decoder_base> strategy_ptr;
+	//strategy_ptr strategy_;
+};
+
+struct exception : virtual std::exception {};
+struct decoder_error: virtual exception {};
+struct encoder_error: virtual exception {};
+struct bad_image: virtual exception {};
+struct file_error: virtual exception {};
 
 } // namespace jxrcxx
 

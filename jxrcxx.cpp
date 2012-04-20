@@ -12,9 +12,10 @@
 #include <string>
 
 #ifdef JXRCXX_IMPLEMENTATION_WIC_ENABLED
+#include <atlbase.h>
+#include <guiddef.h>
 #include <wincodec.h>
 #include <wincodecsdk.h>
-#include <atlbase.h>
 #pragma comment(lib, "WindowsCodecs.lib")
 #endif
 
@@ -131,9 +132,8 @@ class decoder_wic : public decoder_base
 public:
 	decoder_wic()
 	{
-		HRESULT hr = CoInitialize(0);
+		HRESULT const hr = CoInitialize(0);
 		verify(hr);
-		//E_OUTOFMEMORY 
 	}
 
 	~decoder_wic()
@@ -289,8 +289,29 @@ private:
 
 	void verify(HRESULT const hr) const
 	{
-		if (FAILED(hr))
-			throw hr;
+		// Add HRESULT codes below, if necessary
+		switch (hr)
+		{
+		case WINCODEC_ERR_BADHEADER:
+		case WINCODEC_ERR_BADIMAGE:
+		case WINCODEC_ERR_BADMETADATAHEADER:
+		case WINCODEC_ERR_BADSTREAMDATA:
+		case WINCODEC_ERR_UNKNOWNIMAGEFORMAT:
+			throw bad_image();
+		case WINCODEC_ERR_STREAMWRITE:
+		case WINCODEC_ERR_STREAMREAD:
+		case WINCODEC_ERR_STREAMNOTAVAILABLE:
+			throw file_error();
+		case WINCODEC_ERR_INVALIDPARAMETER:
+			throw std::invalid_argument("one or more arguments are invalid");
+		case WINCODEC_ERR_VALUEOUTOFRANGE:
+			throw std::out_of_range("one or more arguments are invalid");
+		case WINCODEC_ERR_OUTOFMEMORY:
+			throw std::bad_alloc("insufficient memory for the operation");
+		default:
+			if (FAILED(hr))
+				throw decoder_error();
+		}
 	}
 
 	std::wstring make_unicode(std::string const& s) const

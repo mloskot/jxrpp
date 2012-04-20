@@ -14,6 +14,7 @@ int main(char* argv[], int argc)
 {
 	try
 	{
+		//char *const filename = "e:\\data\\test\\jpeg-xr\\jpeg.jpg";
 		char *const filename = "e:\\data\\test\\jpeg-xr\\jpeg-xr.wdp";
 
 		jxrcxx::decoder dec(jxrcxx::codec::wic);
