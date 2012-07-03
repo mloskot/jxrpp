@@ -12,14 +12,12 @@
 #define JXRCXX_IMPLEMENTATION_WIC_ENABLED
 #endif
 
-#include <cstddef>
+#include <guiddef.h>
 #include <memory>
 #include <vector>
-#include <stdexcept>
 
-// TODO: replace size_t with ptrdiff_t
-
-namespace jxrcxx {
+namespace jxrcxx
+{
 
 struct codec
 {
@@ -32,8 +30,9 @@ struct codec
 	};
 };
 
+
 // Pixel format enumerators generated from WICPixelFormatGUID.
-struct pixel_details
+struct pixel_info
 {
 	enum tag
 	{
@@ -121,18 +120,14 @@ struct pixel_details
 	std::size_t bpp; // bits per pixel
 	std::size_t channel_count;
 
-	pixel_details()
-		: format_tag(undefined), bpp(0), channel_count(0)
-	{}
-	
-	pixel_details(pixel_details::tag tag, std::size_t bpp, std::size_t channel_count)
-		: format_tag(tag), bpp(bpp), channel_count(channel_count)
-	{}
+	pixel_info() : format_tag(undefined), bpp(0), channel_count(0) {}
+	pixel_info(pixel_info::tag tag, std::size_t bpp, std::size_t channel_count)
+		: format_tag(tag), bpp(bpp), channel_count(channel_count) {}
 };
 
-struct frame_details
+struct frame_info
 {
-	pixel_details pixel_info;
+	pixel_info pixel;
 	double dpi_x;
 	double dpi_y;
 	std::size_t index;
@@ -140,32 +135,26 @@ struct frame_details
 	std::size_t height;
 	std::size_t stride;
 
-	frame_details()
-		: dpi_x(0), dpi_y(0), index(0), width(0), height(0), stride(0)
-	{}
+    frame_info() : dpi_x(0), dpi_y(0), index(0), width(0), height(0), stride(0) {}
 };
 
-struct roi_details
+struct roi_info
 {
 	std::size_t x;
 	std::size_t y;
 	std::size_t width;
 	std::size_t height;
 
-	roi_details()
-		: x(0), y(0), width(0), height(0)
-	{}
-
-	roi_details(std::size_t x, std::size_t y, std::size_t width, std::size_t height)
-		: x(x), y(y), width(width), height(height)
-	{}
+	roi_info() : x(0), y(0), width(0), height(0) {}
 };
 
-struct frame_data
+struct frame_buffer
 {
 	typedef std::vector<unsigned char> buffer_type;
 	buffer_type pixels;
-	frame_details info;
+	std::size_t stride; // TODO replace with frame_info
+
+	frame_buffer() : stride(0) {}
 };
 
 namespace detail
@@ -177,15 +166,10 @@ class decoder
 {
 public:
 	explicit decoder(codec::tag const& codec);
-
-	// TODO: rename to setup, take filename AND codec type
-	void initialise(char const* const filename);
-	std::size_t stride(std::size_t const width, std::size_t const bits_per_pixel) const;
-	std::size_t frame_count() const;
-	frame_details frame_info(std::size_t const index) const;
-	void read(frame_data& buffer, std::size_t const index) const;
-	void read(frame_data& buffer, std::size_t const index, roi_details const& roi) const;
-
+	void attach(char const* const filename);
+	std::size_t get_frame_count() const;
+	frame_info get_frame_info(std::size_t const index) const;
+	void read_frame(std::size_t const index, roi_info const& roi, frame_buffer& buffer) const;
 
 private:
 	// noncopyable
@@ -195,27 +179,6 @@ private:
 	typedef std::shared_ptr<detail::decoder_base> strategy_ptr;
 	strategy_ptr strategy_;
 };
-
-// TODO
-class encoder
-{
-public:
-	//explicit encoder(codec::tag const& codec);
-
-private:
-	// noncopyable
-	//encoder(decoder const& other);
-	//encoder& operator=(decoder const& other);
-
-	//typedef std::shared_ptr<detail::decoder_base> strategy_ptr;
-	//strategy_ptr strategy_;
-};
-
-struct exception : virtual std::exception {};
-struct decoder_error: virtual exception {};
-struct encoder_error: virtual exception {};
-struct bad_image: virtual exception {};
-struct file_error: virtual exception {};
 
 } // namespace jxrcxx
 

@@ -12,34 +12,34 @@
 #include <string>
 
 #ifdef JXRCXX_IMPLEMENTATION_WIC_ENABLED
-#include <atlbase.h>
-#include <guiddef.h>
 #include <wincodec.h>
 #include <wincodecsdk.h>
+#include <atlbase.h>
 #pragma comment(lib, "WindowsCodecs.lib")
 #endif
 
-namespace jxrcxx {
+namespace jxrcxx
+{
 
-namespace detail {
+namespace detail
+{
 
 class decoder_base
 {
 public:
 	virtual ~decoder_base() {}
-	virtual void initialise(char const* const filename) = 0;
-	virtual std::size_t stride(std::size_t const width, std::size_t const bits_per_pixel) const = 0;
-	virtual std::size_t frame_count() const = 0;
-	virtual frame_details frame_info(std::size_t const index) const = 0;
-	virtual void read(frame_data& buffer, std::size_t const index, roi_details const& roi) const = 0;
+	virtual void attach(char const* const filename) = 0;
+	virtual std::size_t get_frame_count() const = 0;
+	virtual frame_info get_frame_info(std::size_t const index) const = 0;
+	virtual void read_frame(std::size_t const index, roi_info const& roi, frame_buffer& buffer) const = 0;
 };
 
 #ifdef JXRCXX_IMPLEMENTATION_WIC_ENABLED
 
-pixel_details::tag make_pixel_format_tag(GUID const& wic_pixel_format)
+pixel_info::tag make_pixel_format_tag(GUID const& wic_pixel_format)
 {
 #define JXRCXX_FORMAT(guid, pixel_format_tag) \
-	else if (IsEqualGUID(wic_pixel_format, guid)) { return pixel_details::##pixel_format_tag ; }
+	else if (IsEqualGUID(wic_pixel_format, guid)) { return pixel_info::##pixel_format_tag ; }
 
 	if (false)
 	{}
@@ -123,7 +123,7 @@ pixel_details::tag make_pixel_format_tag(GUID const& wic_pixel_format)
 	JXRCXX_FORMAT(GUID_WICPixelFormat144bpp8ChannelsAlpha, bpp144_channels8_alpha)
 	else
 	{
-		return pixel_details::undefined;
+		return pixel_info::undefined;
 	}
 }
 
@@ -132,19 +132,18 @@ class decoder_wic : public decoder_base
 public:
 	decoder_wic()
 	{
-		HRESULT const hr = CoInitialize(0);
+		HRESULT hr = CoInitialize(0);
 		verify(hr);
+		//E_OUTOFMEMORY 
 	}
 
 	~decoder_wic()
 	{
 		release();
-
-		// FIXME: Should be called in outer scope, otherwise caues access violation
-		//CoUninitialize();
+		CoUninitialize();
 	}
 
-	void initialise(char const* const filename)
+	void attach(char const* const filename)
 	{
 		HRESULT hr(S_OK);
 
@@ -165,18 +164,7 @@ public:
 		verify(hr);
 	}
 
-	std::size_t stride(std::size_t const width, std::size_t const bits_per_pixel) const
-	{
-		assert(0 == bits_per_pixel % 8);
-
-		std::size_t const byte_count = bits_per_pixel / 8;
-		std::size_t const stride = (width * byte_count + 3) & ~3;
-
-		assert(0 == stride % sizeof(DWORD));
-		return stride;
-	}
-
-	std::size_t frame_count() const
+	std::size_t get_frame_count() const
 	{
 		UINT frame_count(0);
 		HRESULT hr = bitmap_decoder_->GetFrameCount(&frame_count);
@@ -186,9 +174,9 @@ public:
 		return static_cast<std::size_t>(frame_count);
 	}
 
-	frame_details frame_info(std::size_t const index) const
+	frame_info get_frame_info(std::size_t const index) const
 	{
-		assert(index < frame_count());
+		assert(index < get_frame_count());
 
 		CComPtr<IWICBitmapFrameDecode> wic_frame;
 		HRESULT hr = bitmap_decoder_->GetFrame(index, &wic_frame);
@@ -224,55 +212,47 @@ public:
 		hr = wic_pixel_format_info->GetBitsPerPixel(&bpp);
 		verify(hr);
 
-		frame_details info;
+		frame_info info;
 		info.index = index;
 		info.width = width;
 		info.height = height;
 		info.dpi_x = dpi_x;
 		info.dpi_y = dpi_y;
-		info.pixel_info = pixel_details(make_pixel_format_tag(wic_pixel_format), bpp, channel_count);
-		info.stride = stride(info.width, info.pixel_info.bpp);
+		info.pixel = pixel_info(make_pixel_format_tag(wic_pixel_format), bpp, channel_count);
+		info.stride = stride(info.width, info.pixel.bpp);
 		return info;
 	}
 
-	void read(frame_data& buffer, std::size_t const index, roi_details const& roi) const
+	void read_frame(std::size_t const index, roi_info const& roi, frame_buffer& buffer) const
 	{
-		assert(index < frame_count());
-
+		assert(index < get_frame_count());
+	
 		CComPtr<IWICBitmapFrameDecode> wic_frame;
 		HRESULT hr = bitmap_decoder_->GetFrame(index, &wic_frame);
 		verify(hr);
 
-		// Determine if entire image (frame) is requested
-		bool const read_entire = (0 == roi.x && 0 == roi.y && 0 == roi.width && 0 == roi.height);
+		frame_info info = get_frame_info(index);
+        assert(roi.width < info.width);
+        assert(roi.height < info.height);
 
-		frame_details info = frame_info(index);
-		if (!read_entire)
-		{
-			info.width = roi.width;
-			info.height = roi.height;
-		}
-		info.stride = stride(info.width, info.pixel_info.bpp);
-
-		std::vector<unsigned char> pixel_buffer(info.stride * info.height);
-		if (read_entire)
-		{
-			hr = wic_frame->CopyPixels(0, info.stride, pixel_buffer.size(), &pixel_buffer[0]);
-		}
-		else
-		{
-			WICRect wic_rect = { roi.x, roi.y, roi.width, roi.height };
-			hr = wic_frame->CopyPixels(&wic_rect, info.stride, pixel_buffer.size(), &pixel_buffer[0]);
-		}
+		/*
+		WICRect wic_rect;
+		wic_rect.X = static_cast<INT>(roi.x);
+		wic_rect.Y = static_cast<INT>(roi.y);
+		wic_rect.Width = static_cast<INT>(roi.width);
+		wic_rect.Height = static_cast<INT>(roi.height);
+		*/
+		std::size_t const pixel_buffer_stride = stride(roi.width, info.pixel.bpp);
+		std::vector<unsigned char> pixel_buffer(pixel_buffer_stride * roi.height);
+		hr = wic_frame->CopyPixels(0, pixel_buffer_stride, pixel_buffer.size(), &pixel_buffer[0]);
 		verify(hr);
 
-		// Write output
-		buffer.info = info;
 #if _MSC_VER > 1500
 		buffer.pixels = std::move(pixel_buffer);
 #else
 		buffer.pixels = pixel_buffer;
 #endif
+		buffer.stride = pixel_buffer_stride;
 	}
 
 private:
@@ -289,31 +269,21 @@ private:
 
 	void verify(HRESULT const hr) const
 	{
-		// Add HRESULT codes below, if necessary
-		switch (hr)
-		{
-		case WINCODEC_ERR_BADHEADER:
-		case WINCODEC_ERR_BADIMAGE:
-		case WINCODEC_ERR_BADMETADATAHEADER:
-		case WINCODEC_ERR_BADSTREAMDATA:
-		case WINCODEC_ERR_UNKNOWNIMAGEFORMAT:
-			throw bad_image();
-		case WINCODEC_ERR_STREAMWRITE:
-		case WINCODEC_ERR_STREAMREAD:
-		case WINCODEC_ERR_STREAMNOTAVAILABLE:
-			throw file_error();
-		case WINCODEC_ERR_INVALIDPARAMETER:
-			throw std::invalid_argument("one or more arguments are invalid");
-		case WINCODEC_ERR_VALUEOUTOFRANGE:
-			throw std::out_of_range("one or more arguments are invalid");
-		case WINCODEC_ERR_OUTOFMEMORY:
-			throw std::bad_alloc("insufficient memory for the operation");
-		default:
-			if (FAILED(hr))
-				throw decoder_error();
-		}
+		if (FAILED(hr))
+			throw hr;
 	}
 
+	std::size_t stride(std::size_t const width, std::size_t const bpp) const
+	{
+		assert(0 == bpp % 8);
+
+		std::size_t const byte_count = bpp / 8;
+		std::size_t const stride = (width * byte_count + 3) & ~3;
+
+		assert(0 == stride % sizeof(DWORD));
+		return stride;
+	}
+	
 	std::wstring make_unicode(std::string const& s) const
 	{
 		std::size_t ssize = s.size();
@@ -337,19 +307,6 @@ private:
 
 #endif // JXRCXX_IMPLEMENTATION_WIC_ENABLED
 
-//class decoder_reference : public decoder_base
-//{
-//public:
-//	void initialise(char* const uri)
-//	{
-//	}
-//
-//	std::size_t frame_count() const
-//	{
-//		return 0;
-//	}
-//};
-
 } // namespace detail
 
 decoder::decoder(codec::tag const& codec)
@@ -370,37 +327,28 @@ decoder::decoder(codec::tag const& codec)
 	assert(strategy_);
 }
 
-void decoder::initialise(char const* const filename)
+void decoder::attach(char const* const filename)
 {
 	assert(strategy_);
 	assert(filename);
-	return strategy_->initialise(filename);
+	return strategy_->attach(filename);
 }
 
-std::size_t decoder::frame_count() const
+std::size_t decoder::get_frame_count() const
 {
 	assert(strategy_);
-	return strategy_->frame_count();
+	return strategy_->get_frame_count();
 }
 
-frame_details decoder::frame_info(std::size_t const index) const
+frame_info decoder::get_frame_info(std::size_t const index) const
 {
 	assert(strategy_);
-	return strategy_->frame_info(index);
+	return strategy_->get_frame_info(index);
 }
-
-void decoder::read(frame_data& buffer, std::size_t const index) const
+void decoder::read_frame(std::size_t const index, roi_info const& roi, frame_buffer& buffer) const
 {
 	assert(strategy_);
-
-	roi_details roi; // default-initialised to grab entire frame
-	strategy_->read(buffer, index, roi);
-}
-
-void decoder::read(frame_data& buffer, std::size_t const index, roi_details const& roi) const
-{
-	assert(strategy_);
-	strategy_->read(buffer, index, roi);
+	strategy_->read_frame(index, roi, buffer);
 }
 
 } // namespace jxrcxx

@@ -14,27 +14,24 @@ int main(char* argv[], int argc)
 {
 	try
 	{
-		//char *const filename = "e:\\data\\test\\jpeg-xr\\jpeg.jpg";
 		char *const filename = "e:\\data\\test\\jpeg-xr\\jpeg-xr.wdp";
 
 		jxrcxx::decoder dec(jxrcxx::codec::wic);
+		dec.attach(filename);
 		
-		dec.initialise(filename);
-		cout << dec.frame_count() << endl;
+		cout << dec.get_frame_count() << endl;
 
-		jxrcxx::frame_details frame_info(dec.frame_info(0));
-		cout << frame_info.index << endl;
-		cout << frame_info.width << " x " << frame_info.height << endl;
-		cout << frame_info.dpi_x << " x " << frame_info.dpi_y << endl;
-		cout << frame_info.pixel_info.channel_count << endl;
-		cout << frame_info.pixel_info.bpp << endl;
+		jxrcxx::frame_info frame(dec.get_frame_info(0));
+		cout << frame.index << endl;
+		cout << frame.width << " x " << frame.height << endl;
+		cout << frame.dpi_x << " x " << frame.dpi_y << endl;
+		cout << frame.pixel.channel_count << endl;
+		cout << frame.pixel.bpp << endl;
 
-		jxrcxx::frame_data buffer1;
-		dec.read(buffer1, 0);
+		jxrcxx::frame_buffer buffer;
+        jxrcxx::roi_info roi;
+		dec.read_frame(0, roi, buffer);
 
-		jxrcxx::frame_data buffer2;
-		jxrcxx::roi_details roi(200, 200, 60, 60);
-		dec.read(buffer2, 0, roi);
 
 		return EXIT_SUCCESS;
 	}
