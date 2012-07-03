@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.6)
+project(jxrcxx)
+set(jxrcxx_VERSION_MAJOR 0)
+set(jxrcxx_VERSION_MINOR 1)
+set(jxrcxx_SRC jxrcxx.hpp jxrcxx.cpp)
+add_executable(jxrcxx_info jxrcxx_info.cpp ${jxrcxx_SRC})
