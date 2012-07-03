@@ -8,6 +8,10 @@
 #ifndef JXRCXX_JXRCXX_HPP_INCLUDED
 #define JXRCXX_JXRCXX_HPP_INCLUDED
 
+// JPEG XR image coding system - Reference Software
+#define JXRCXX_IMPLEMENTATION_REF_ENABLED
+
+// JPEG XR support through Windows Imaging Component
 #ifdef _MSC_VER
 #define JXRCXX_IMPLEMENTATION_WIC_ENABLED
 #endif
@@ -22,10 +26,12 @@ namespace jxrcxx
 struct codec
 {
 	enum tag
-	{
+    {
+#ifdef JXRCXX_IMPLEMENTATION_REF_ENABLED
 		reference
+#endif
 #ifdef JXRCXX_IMPLEMENTATION_WIC_ENABLED
-		, wic // Windows Imaging Component (WIC)
+		, wic
 #endif
 	};
 };
