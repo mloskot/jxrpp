@@ -65,9 +65,12 @@ public:
 
     void read_frame(std::size_t const index, roi_info const& roi, frame_buffer& buffer) const
     {
-        assert(index < get_frame_count());
     }
+
+private:
+    
 };
+
 #endif // JXRCXX_IMPLEMENTATION_REF_ENABLED
 
 #ifdef JXRCXX_IMPLEMENTATION_WIC_ENABLED
