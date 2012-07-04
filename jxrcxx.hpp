@@ -16,7 +16,10 @@
 #define JXRCXX_IMPLEMENTATION_WIC_ENABLED
 #endif
 
+#ifdef JXRCXX_IMPLEMENTATION_WIC_ENABLED
 #include <guiddef.h>
+#endif
+
 #include <memory>
 #include <vector>
 
