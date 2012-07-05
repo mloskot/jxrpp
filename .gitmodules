@@ -1,0 +1,3 @@
+[submodule "jxr-refsoft"]
+	path = jxr-refsoft
+	url = git://github.com/mloskot/jxr-refsoft.git
