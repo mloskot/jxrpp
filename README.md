@@ -13,3 +13,4 @@ Status
 [jxr]: http://en.wikipedia.org/wiki/JPEG_XR
 [jxr-ref]: http://www.itu.int/rec/T-REC-T.835/en
 [jxr-refsoft]: https://github.com/mloskot/jxr-refsoft
+[wic]:http://en.wikipedia.org/wiki/Windows_Imaging_Component
