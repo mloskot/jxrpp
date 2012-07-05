@@ -5,7 +5,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "jxrcxx.hpp"
+#include "jxrpp.hpp"
 
 #include <cassert>
 #include <cstddef>
@@ -18,7 +18,7 @@
 #pragma comment(lib, "WindowsCodecs.lib")
 #endif
 
-namespace jxrcxx
+namespace jxrpp
 {
 
 namespace detail
@@ -392,4 +392,4 @@ void decoder::read_frame(std::size_t const index, roi_info const& roi, frame_buf
     strategy_->read_frame(index, roi, buffer);
 }
 
-} // namespace jxrcxx
+} // namespace jxrpp

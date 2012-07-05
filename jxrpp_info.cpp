@@ -5,7 +5,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "jxrcxx.hpp"
+#include "jxrpp.hpp"
 #include <exception>
 #include <iostream>
 using namespace std;
@@ -16,23 +16,23 @@ int main(int argc, char* argv[])
     {
         char const* filename = "e:\\data\\test\\jpeg-xr\\jpeg-xr.wdp";
 #ifdef _MSC_VER
-        jxrcxx::decoder dec(jxrcxx::codec::wic);
+        jxrpp::decoder dec(jxrpp::codec::wic);
 #else
-        jxrcxx::decoder dec(jxrcxx::codec::reference);
+        jxrpp::decoder dec(jxrpp::codec::reference);
 #endif
         dec.attach(filename);
 
         cout << dec.get_frame_count() << endl;
 
-        jxrcxx::frame_info frame(dec.get_frame_info(0));
+        jxrpp::frame_info frame(dec.get_frame_info(0));
         cout << frame.index << endl;
         cout << frame.width << " x " << frame.height << endl;
         cout << frame.dpi_x << " x " << frame.dpi_y << endl;
         cout << frame.pixel.channel_count << endl;
         cout << frame.pixel.bpp << endl;
 
-        jxrcxx::frame_buffer buffer;
-        jxrcxx::roi_info roi;
+        jxrpp::frame_buffer buffer;
+        jxrpp::roi_info roi;
         dec.read_frame(0, roi, buffer);
 
 

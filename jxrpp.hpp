@@ -23,7 +23,7 @@
 #include <memory>
 #include <vector>
 
-namespace jxrcxx
+namespace jxrpp
 {
 
 struct codec
@@ -189,6 +189,6 @@ private:
     strategy_ptr strategy_;
 };
 
-} // namespace jxrcxx
+} // namespace jxrpp
 
 #endif // JXRCXX_JXRCXX_HPP_INCLUDED
