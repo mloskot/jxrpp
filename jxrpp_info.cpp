@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 {
     try
     {
-        char const* filename = "e:\\data\\test\\jpeg-xr\\jpeg-xr.wdp";
+        char const* filename = "g:\\dev\\jpegxr\\images\\jpeg-xr.wdp";
 #ifdef _MSC_VER
         jxrpp::decoder dec(jxrpp::codec::wic);
 #else
@@ -25,16 +25,16 @@ int main(int argc, char* argv[])
         cout << dec.get_frame_count() << endl;
 
         jxrpp::frame_info frame(dec.get_frame_info(0));
-        cout << frame.index << endl;
+        cout << frame.index << endl;    
         cout << frame.width << " x " << frame.height << endl;
         cout << frame.dpi_x << " x " << frame.dpi_y << endl;
         cout << frame.pixel.channel_count << endl;
         cout << frame.pixel.bpp << endl;
 
         jxrpp::frame_buffer buffer;
-        jxrpp::roi_info roi;
-        dec.read_frame(0, roi, buffer);
+        dec.read_frame(0, buffer);
 
+        //jxrpp::roi_info roi;
 
         return EXIT_SUCCESS;
     }

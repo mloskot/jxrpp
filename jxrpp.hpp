@@ -178,6 +178,7 @@ public:
     void attach(char const* const filename);
     std::size_t get_frame_count() const;
     frame_info get_frame_info(std::size_t const index) const;
+    void read_frame(std::size_t const index, frame_buffer& buffer) const;
     void read_frame(std::size_t const index, roi_info const& roi, frame_buffer& buffer) const;
 
 private:

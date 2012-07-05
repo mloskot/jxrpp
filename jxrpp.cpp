@@ -225,11 +225,15 @@ public:
         UINT height(0);
         hr = wic_frame->GetSize(&width, &height);
         verify(hr);
+        assert(width > 0);
+        assert(height > 0);
 
         double dpi_x(0);
         double dpi_y(0);
         hr = wic_frame->GetResolution(&dpi_x, &dpi_y);
         verify(hr);
+        assert(dpi_x > 0);
+        assert(dpi_y > 0);
 
         GUID wic_pixel_format = { 0 };
         hr = wic_frame->GetPixelFormat(&wic_pixel_format);
@@ -246,10 +250,12 @@ public:
         UINT channel_count(0);
         hr = wic_pixel_format_info->GetChannelCount(&channel_count);
         verify(hr);
+        assert(channel_count > 0);
 
         UINT bpp(0);
         hr = wic_pixel_format_info->GetBitsPerPixel(&bpp);
         verify(hr);
+        assert(bpp > 0);
 
         frame_info info;
         info.index = index;
@@ -271,16 +277,13 @@ public:
         verify(hr);
 
         frame_info info = get_frame_info(index);
-        assert(roi.width < info.width);
-        assert(roi.height < info.height);
 
-        /*
         WICRect wic_rect;
         wic_rect.X = static_cast<INT>(roi.x);
         wic_rect.Y = static_cast<INT>(roi.y);
-        wic_rect.Width = static_cast<INT>(roi.width);
-        wic_rect.Height = static_cast<INT>(roi.height);
-        */
+        wic_rect.Width = std::max<INT>(roi.width, info.width);
+        wic_rect.Height = std::max<INT>(roi.height, info.height);
+
         std::size_t const pixel_buffer_stride = stride(roi.width, info.pixel.bpp);
         std::vector<unsigned char> pixel_buffer(pixel_buffer_stride * roi.height);
         hr = wic_frame->CopyPixels(0, pixel_buffer_stride, pixel_buffer.size(), &pixel_buffer[0]);
@@ -385,6 +388,16 @@ frame_info decoder::get_frame_info(std::size_t const index) const
     assert(index < get_frame_count());
     return strategy_->get_frame_info(index);
 }
+
+void decoder::read_frame(std::size_t const index, frame_buffer& buffer) const
+{
+    //TODO
+    //frame_info fi = get_frame_info(index);
+    //roi_info roi;
+    //roi.
+    //read_frame(index, roi, buffer);
+}
+
 void decoder::read_frame(std::size_t const index, roi_info const& roi, frame_buffer& buffer) const
 {
     assert(strategy_);
