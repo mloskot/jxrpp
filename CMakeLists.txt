@@ -18,39 +18,40 @@ endif()
 
 ###############################################################################
 # libjpegxr - uses source files from git submodule jxr-refsoft
-set(libjpegxr_DIR ${CMAKE_SOURCE_DIR}/jxr-refsoft/src)
-set(libjpegxr_SRC
-    ${libjpegxr_DIR}/algo.c
-    ${libjpegxr_DIR}/api.c
-    ${libjpegxr_DIR}/cr_parse.c
-    ${libjpegxr_DIR}/cw_emit.c
-    ${libjpegxr_DIR}/flags.c
-    ${libjpegxr_DIR}/init.c
-    ${libjpegxr_DIR}/io.c
-    ${libjpegxr_DIR}/jpegxr_pixelformat.c
-    ${libjpegxr_DIR}/r_parse.c
-    ${libjpegxr_DIR}/r_strip.c
-    ${libjpegxr_DIR}/r_tile_frequency.c
-    ${libjpegxr_DIR}/r_tile_spatial.c 
-    ${libjpegxr_DIR}/w_emit.c
-    ${libjpegxr_DIR}/w_strip.c
-    ${libjpegxr_DIR}/w_tile_frequency.c
-    ${libjpegxr_DIR}/w_tile_spatial.c
-    ${libjpegxr_DIR}/x_strip.c)
-add_library(libjpegxr SHARED ${libjpegxr_SRC})
+set(jpegxr_DIR ${CMAKE_SOURCE_DIR}/jxr-refsoft/src) 
+set(jpegxr_SRC
+    ${jpegxr_DIR}/algo.c
+    ${jpegxr_DIR}/api.c
+    ${jpegxr_DIR}/cr_parse.c
+    ${jpegxr_DIR}/cw_emit.c
+    ${jpegxr_DIR}/flags.c
+    ${jpegxr_DIR}/init.c
+    ${jpegxr_DIR}/io.c
+    ${jpegxr_DIR}/jpegxr_pixelformat.c
+    ${jpegxr_DIR}/r_parse.c
+    ${jpegxr_DIR}/r_strip.c
+    ${jpegxr_DIR}/r_tile_frequency.c
+    ${jpegxr_DIR}/r_tile_spatial.c 
+    ${jpegxr_DIR}/w_emit.c
+    ${jpegxr_DIR}/w_strip.c
+    ${jpegxr_DIR}/w_tile_frequency.c
+    ${jpegxr_DIR}/w_tile_spatial.c
+    ${jpegxr_DIR}/x_strip.c)
+add_library(jpegxr SHARED ${jpegxr_SRC})
 if (MSVC)
-    set_source_files_properties(${libjpegxr_SRC} PROPERTIES LANGUAGE CXX)
-    set_target_properties(libjpegxr PROPERTIES DEFINE_SYMBOL "JXR_DLL_EXPORTS")
+    set_source_files_properties(${jpegxr_SRC} PROPERTIES LANGUAGE CXX)
+    set_target_properties(jpegxr PROPERTIES DEFINE_SYMBOL "JXR_DLL_EXPORTS")
 endif()
 
 ###############################################################################
 # libjxrpp
 set(jxrpp_SRC jxrpp.hpp jxrpp.cpp)
-add_library(libjxrpp STATIC ${jxrpp_SRC})
-set_target_properties(libjxrpp PROPERTIES INCLUDE_DIRECTORIES ${libjpegxr_DIR})
+add_library(jxrpp STATIC ${jxrpp_SRC})
+set_target_properties(jxrpp PROPERTIES INCLUDE_DIRECTORIES ${jpegxr_DIR})
 
 ###############################################################################
 # jxrpp_info
+link_directories(${CMAKE_SOURCE_DIR})
 add_executable(jxrpp_info jxrpp_info.cpp ${jxrpp_SRC} ${jpegxr_LIB})
-set_target_properties(jxrpp_info PROPERTIES INCLUDE_DIRECTORIES ${libjpegxr_DIR})
-target_link_libraries(jxrpp_info libjxrpp libjpegxr)
+set_target_properties(jxrpp_info PROPERTIES INCLUDE_DIRECTORIES ${jpegxr_DIR})
+#target_link_libraries(jxrpp_info /home/mloskot/dev/jpegxr/_git/build-jxrpp/libjpegxr.so /home/mloskot/dev/jpegxr/_git/build-jxrpp/libjxrpp.a)

@@ -9,14 +9,20 @@
 
 #include <cassert>
 #include <cstddef>
+#include <stdexcept>
 #include <string>
+#include <vector>
+
+#ifdef JXRCXX_IMPLEMENTATION_REF_ENABLED
+#include <jpegxr.h>
+#endif // JXRCXX_IMPLEMENTATION_REF_ENABLED
 
 #ifdef JXRCXX_IMPLEMENTATION_WIC_ENABLED
 #include <wincodec.h>
 #include <wincodecsdk.h>
 #include <atlbase.h>
 #pragma comment(lib, "WindowsCodecs.lib")
-#endif
+#endif // JXRCXX_IMPLEMENTATION_WIC_ENABLED
 
 namespace jxrpp
 {
@@ -36,6 +42,76 @@ public:
 
 #ifdef JXRCXX_IMPLEMENTATION_REF_ENABLED
 
+class scoped_file
+{
+public:
+    scoped_file() : fd_(0)
+    {
+    }
+    
+    ~scoped_file()
+    {
+        std::fclose(fd_);
+    }
+
+    void open(char const* const filename, char const* const modes)
+    {
+        fd_ = std::fopen(filename, modes);
+        if (fd_ == 0)
+            throw std::runtime_error("cannot open file");
+    }
+    
+    std::FILE* get() const
+    {
+        return fd_;
+    }
+
+private: 
+    std::FILE* fd_;
+    
+    // noncopyable
+    scoped_file(scoped_file const&);
+    scoped_file& operator=(scoped_file const&);
+};
+
+class scoped_container
+{
+public:
+    scoped_container() : container_(0)
+    {
+    }
+    
+    ~scoped_container()
+    {
+        jxr_destroy_container(container_);
+    }
+
+    void read(std::FILE* stream)
+    {
+        container_ = jxr_create_container();
+        if (!container_)
+            throw std::runtime_error("cannot create container");
+        
+        if (jxr_read_image_container(container_, stream) < 0)
+        {
+            jxr_destroy_container(container_);
+            throw std::runtime_error("no container found");
+        }
+    }
+    
+    jxr_container_t get() const
+    {
+        return container_;
+    }
+
+private: 
+    jxr_container_t container_;
+    
+    // noncopyable
+    scoped_container(scoped_container const&);
+    scoped_container& operator=(scoped_container const&);
+};
+
 class decoder_reference : public decoder_base
 {
 public:
@@ -49,6 +125,8 @@ public:
 
     void attach(char const* const filename)
     {
+        file_.open(filename, "rb");
+        container_.read(file_.get());
     }
 
     std::size_t get_frame_count() const
@@ -68,7 +146,12 @@ public:
     }
 
 private:
+    scoped_file file_;
+    scoped_container container_;
     
+    // noncopyable
+    decoder_reference(decoder_reference const&);
+    decoder_reference& operator=(decoder_reference const&);
 };
 
 #endif // JXRCXX_IMPLEMENTATION_REF_ENABLED
@@ -276,15 +359,15 @@ public:
         HRESULT hr = bitmap_decoder_->GetFrame(index, &wic_frame);
         verify(hr);
 
-        frame_info info = get_frame_info(index);
-
         WICRect wic_rect;
         wic_rect.X = static_cast<INT>(roi.x);
         wic_rect.Y = static_cast<INT>(roi.y);
-        wic_rect.Width = std::max<INT>(roi.width, info.width);
-        wic_rect.Height = std::max<INT>(roi.height, info.height);
+        wic_rect.Width = static_cast<INT>(roi.width);
+        wic_rect.Height = static_cast<INT>(roi.height);
 
-        std::size_t const pixel_buffer_stride = stride(roi.width, info.pixel.bpp);
+        frame_info frame = get_frame_info(index);
+
+        std::size_t const pixel_buffer_stride = stride(roi.width, frame.pixel.bpp);
         std::vector<unsigned char> pixel_buffer(pixel_buffer_stride * roi.height);
         hr = wic_frame->CopyPixels(0, pixel_buffer_stride, pixel_buffer.size(), &pixel_buffer[0]);
         verify(hr);
@@ -391,17 +474,31 @@ frame_info decoder::get_frame_info(std::size_t const index) const
 
 void decoder::read_frame(std::size_t const index, frame_buffer& buffer) const
 {
-    //TODO
-    //frame_info fi = get_frame_info(index);
-    //roi_info roi;
-    //roi.
-    //read_frame(index, roi, buffer);
+    assert(strategy_);
+    assert(index < get_frame_count());
+
+    frame_info frame = get_frame_info(index);
+    roi_info roi;
+    roi.x = roi.y = 0;
+    roi.width = frame.width;
+    roi.height = frame.height;
+ 
+    read_frame(index, roi, buffer);
 }
 
 void decoder::read_frame(std::size_t const index, roi_info const& roi, frame_buffer& buffer) const
 {
     assert(strategy_);
     assert(index < get_frame_count());
+    
+    frame_info frame = get_frame_info(index);
+    
+    if (roi.x > frame.width || roi.y > frame.height)
+        throw std::out_of_range("invalid roi position");
+    
+    if (roi.width > frame.width || roi.height > frame.height)
+        throw std::out_of_range("invalid roi dimension");
+    
     strategy_->read_frame(index, roi, buffer);
 }
 
