@@ -20,6 +20,7 @@ endif()
 # libjpegxr - uses source files from git submodule jxr-refsoft
 set(jpegxr_DIR ${CMAKE_SOURCE_DIR}/jxr-refsoft/src) 
 set(jpegxr_SRC
+	${jpegxr_DIR}/jpegxr.h
     ${jpegxr_DIR}/algo.c
     ${jpegxr_DIR}/api.c
     ${jpegxr_DIR}/cr_parse.c
@@ -39,7 +40,7 @@ set(jpegxr_SRC
     ${jpegxr_DIR}/x_strip.c)
 if (MSVC)
     set_source_files_properties(${jpegxr_SRC} PROPERTIES LANGUAGE CXX)
-    add_library(jpegxr SHARED ${jpegxr_SRC})
+    add_library(jpegxr STATIC ${jpegxr_SRC})
     set_target_properties(jpegxr PROPERTIES DEFINE_SYMBOL "JXR_DLL_EXPORTS")
 else()
     add_library(jpegxr STATIC ${jpegxr_SRC})
