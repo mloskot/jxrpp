@@ -262,7 +262,6 @@ public:
     ~decoder_wic()
     {
         release();
-        CoUninitialize();
     }
 
     void attach(char const* const filename)
@@ -291,15 +290,11 @@ public:
         UINT frame_count(0);
         HRESULT hr = bitmap_decoder_->GetFrameCount(&frame_count);
         verify(hr);
-
-        assert(frame_count > 0);
         return static_cast<std::size_t>(frame_count);
     }
 
     frame_info get_frame_info(std::size_t const index) const
     {
-        assert(index < get_frame_count());
-
         CComPtr<IWICBitmapFrameDecode> wic_frame;
         HRESULT hr = bitmap_decoder_->GetFrame(index, &wic_frame);
         verify(hr);
@@ -390,6 +385,9 @@ private:
         stream_.Release();
         bitmap_decoder_.Release();
         factory_.Release();
+
+        // FIXME: Access violation -> WMPhoto.dll -> ReleaseWICFactory
+        //CoUninitialize();
     }
 
     void verify(HRESULT const hr) const
