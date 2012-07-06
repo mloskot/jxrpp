@@ -8,19 +8,38 @@
 #include "jxrpp.hpp"
 #include <exception>
 #include <iostream>
+#include <vector>
+#include <string>
 using namespace std;
 
 int main(int argc, char* argv[])
 {
     try
     {
-        char const* filename = "g:\\dev\\jpegxr\\images\\jpeg-xr.wdp";
+        std::vector<std::string> args(argv, argv + argc);
+
+        std::string filename;
+        jxrpp::codec::tag coder = jxrpp::codec::reference;
+        if (args.size() == 3 && args[1] == "--wic")
+        {
 #ifdef _MSC_VER
-        jxrpp::decoder dec(jxrpp::codec::wic);
+            filename = args[2];
+            coder = jxrpp::codec::wic;
 #else
-        jxrpp::decoder dec(jxrpp::codec::reference);
+            throw std::invalid_argument("Windows Imagining Component is Windows-only");
 #endif
-        dec.attach(filename);
+        }
+        else if (args.size() == 2)
+        {
+            filename = args[1];
+        }
+        else
+        {
+            throw std::invalid_argument("Usage: jxrpp_info [--wic] file.wdp");
+        }
+
+        jxrpp::decoder dec(coder);
+        dec.attach(filename.c_str());
 
         cout << dec.get_frame_count() << endl;
 
