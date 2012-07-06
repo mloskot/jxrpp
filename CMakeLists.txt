@@ -53,7 +53,6 @@ set_target_properties(jxrpp PROPERTIES INCLUDE_DIRECTORIES ${jpegxr_DIR})
 
 ###############################################################################
 # jxrpp_info
-link_directories(${CMAKE_BINARY_DIR})
 add_executable(jxrpp_info jxrpp_info.cpp)
 set_target_properties(jxrpp_info PROPERTIES INCLUDE_DIRECTORIES ${jpegxr_DIR})
-target_link_libraries(jxrpp_info jpegxr jxrpp)
+target_link_libraries(jxrpp_info jxrpp jpegxr)
