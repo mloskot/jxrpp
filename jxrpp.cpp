@@ -80,7 +80,7 @@ public:
     scoped_container() : container_(0)
     {
     }
-    
+
     ~scoped_container()
     {
         jxr_destroy_container(container_);
@@ -91,17 +91,42 @@ public:
         container_ = jxr_create_container();
         if (!container_)
             throw std::runtime_error("cannot create container");
-        
+
         if (jxr_read_image_container(container_, stream) < 0)
         {
             jxr_destroy_container(container_);
             throw std::runtime_error("no container found");
         }
     }
-    
+
     jxr_container_t get() const
     {
         return container_;
+    }
+
+    int image_count() const
+    {
+        return jxrc_image_count(container_);
+    }
+
+    int image_height(int image) const
+    {
+        return jxrc_image_height(container_, image);
+    }
+
+    int image_width(int image) const
+    {
+        return jxrc_image_width(container_, image);
+    }
+
+    double width_resolution(int image) const
+    {
+        return jxrc_width_resolution(container_, image);
+    }
+
+    double height_resolution(int image) const
+    {
+        return jxrc_height_resolution(container_, image);
     }
 
 private: 
@@ -131,14 +156,21 @@ public:
 
     std::size_t get_frame_count() const
     {
-        std::size_t frame_count(0);
-        return static_cast<std::size_t>(frame_count);
+        std::size_t frame_count = container_.image_count();
+        return frame_count;
     }
 
     frame_info get_frame_info(std::size_t const index) const
     {
-        frame_info info;
-        return info;
+        frame_info frame;
+        frame.index = index;
+        frame.height = container_.image_height(index);
+        frame.width = container_.image_width(index);
+        frame.dpi_x = container_.width_resolution(index);
+        frame.dpi_y = container_.height_resolution(index);
+        // TODO frame.pixel
+        frame.stride = stride(frame.width, 3);
+        return frame;
     }
 
     void read_frame(std::size_t const index, roi_info const& roi, frame_buffer& buffer) const
@@ -152,6 +184,17 @@ private:
     // noncopyable
     decoder_ref(decoder_ref const&);
     decoder_ref& operator=(decoder_ref const&);
+
+    std::size_t stride(std::size_t const width, std::size_t const bpp) const
+    {
+        //assert(0 == bpp % 8);
+
+        std::size_t const byte_count = bpp / 8;
+        std::size_t const stride = width * byte_count;
+
+        //assert(0 == stride % sizeof(DWORD));
+        return stride;
+    }
 };
 
 #endif // JXRCXX_IMPLEMENTATION_REF_ENABLED
@@ -379,6 +422,10 @@ private:
     CComPtr<IWICImagingFactory> factory_;
     CComPtr<IWICBitmapDecoder> bitmap_decoder_;
     CComPtr<IWICStream> stream_;
+
+    // noncopyable
+    decoder_wic(decoder_wic const&);
+    decoder_wic& operator=(decoder_wic const&);
 
     void release()
     {
