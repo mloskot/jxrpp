@@ -37,10 +37,12 @@ set(jpegxr_SRC
     ${jpegxr_DIR}/w_tile_frequency.c
     ${jpegxr_DIR}/w_tile_spatial.c
     ${jpegxr_DIR}/x_strip.c)
-add_library(jpegxr SHARED ${jpegxr_SRC})
 if (MSVC)
     set_source_files_properties(${jpegxr_SRC} PROPERTIES LANGUAGE CXX)
+    add_library(jpegxr SHARED ${jpegxr_SRC})
     set_target_properties(jpegxr PROPERTIES DEFINE_SYMBOL "JXR_DLL_EXPORTS")
+else()
+    add_library(jpegxr STATIC ${jpegxr_SRC})
 endif()
 
 ###############################################################################
@@ -51,7 +53,7 @@ set_target_properties(jxrpp PROPERTIES INCLUDE_DIRECTORIES ${jpegxr_DIR})
 
 ###############################################################################
 # jxrpp_info
-link_directories(${CMAKE_SOURCE_DIR})
-add_executable(jxrpp_info jxrpp_info.cpp ${jxrpp_SRC} ${jpegxr_LIB})
+link_directories(${CMAKE_BINARY_DIR})
+add_executable(jxrpp_info jxrpp_info.cpp)
 set_target_properties(jxrpp_info PROPERTIES INCLUDE_DIRECTORIES ${jpegxr_DIR})
-#target_link_libraries(jxrpp_info /home/mloskot/dev/jpegxr/_git/build-jxrpp/libjpegxr.so /home/mloskot/dev/jpegxr/_git/build-jxrpp/libjxrpp.a)
+target_link_libraries(jxrpp_info jpegxr jxrpp)
