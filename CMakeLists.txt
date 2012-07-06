@@ -7,10 +7,11 @@
 # http://www.boost.org/LICENSE_1_0.txt)
 #
 ###############################################################################
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 project(jxrpp)
 set(jxrpp_VERSION_MAJOR 0)
 set(jxrpp_VERSION_MINOR 1)
+set(jxrpp_VERSION "${jxrpp_VERSION_MAJOR}.${jxrpp_VERSION_MINOR}")
 
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
     set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
@@ -40,8 +41,17 @@ set(jpegxr_SRC
     ${jpegxr_DIR}/x_strip.c)
 if (MSVC)
     set_source_files_properties(${jpegxr_SRC} PROPERTIES LANGUAGE CXX)
-    add_library(jpegxr STATIC ${jpegxr_SRC})
-    set_target_properties(jpegxr PROPERTIES DEFINE_SYMBOL "JXR_DLL_EXPORTS")
+
+    add_library(jpegxr SHARED ${jpegxr_SRC})
+    set_target_properties(jpegxr PROPERTIES
+        OUTPUT_NAME jpegxr
+        DEFINE_SYMBOL JXR_DLL_EXPORTS
+        COMPILE_DEFINITIONS JXR_DLL)
+
+    add_library(jpegxr-static STATIC ${jpegxr_SRC})
+    set_target_properties(jpegxr-static PROPERTIES
+        OUTPUT_NAME jpegxr
+        PREFIX "lib")
 else()
     add_library(jpegxr STATIC ${jpegxr_SRC})
 endif()
@@ -50,10 +60,15 @@ endif()
 # libjxrpp
 set(jxrpp_SRC jxrpp.hpp jxrpp.cpp)
 add_library(jxrpp STATIC ${jxrpp_SRC})
-set_target_properties(jxrpp PROPERTIES INCLUDE_DIRECTORIES ${jpegxr_DIR})
+set_target_properties(jxrpp PROPERTIES
+    OUTPUT_NAME jxrpp
+    VERSION ${jxrpp_VERSION}
+    CLEAN_DIRECT_OUTPUT 1
+    INCLUDE_DIRECTORIES ${jpegxr_DIR})
 
 ###############################################################################
 # jxrpp_info
 add_executable(jxrpp_info jxrpp_info.cpp)
-set_target_properties(jxrpp_info PROPERTIES INCLUDE_DIRECTORIES ${jpegxr_DIR})
 target_link_libraries(jxrpp_info jxrpp jpegxr)
+set_target_properties(jxrpp_info PROPERTIES
+    INCLUDE_DIRECTORIES ${jpegxr_DIR})
