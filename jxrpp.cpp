@@ -112,14 +112,14 @@ private:
     scoped_container& operator=(scoped_container const&);
 };
 
-class decoder_reference : public decoder_base
+class decoder_ref : public decoder_base
 {
 public:
-    decoder_reference()
+    decoder_ref()
     {
     }
 
-    ~decoder_reference()
+    ~decoder_ref()
     {
     }
 
@@ -150,8 +150,8 @@ private:
     scoped_container container_;
     
     // noncopyable
-    decoder_reference(decoder_reference const&);
-    decoder_reference& operator=(decoder_reference const&);
+    decoder_ref(decoder_ref const&);
+    decoder_ref& operator=(decoder_ref const&);
 };
 
 #endif // JXRCXX_IMPLEMENTATION_REF_ENABLED
@@ -442,7 +442,7 @@ decoder::decoder(codec::tag const& codec)
     else
 #endif // JXRCXX_IMPLEMENTATION_WIC_ENABLED
     {
-        strategy_ = strategy_ptr(new detail::decoder_reference());
+        strategy_ = strategy_ptr(new detail::decoder_ref());
     }
 
     assert(strategy_);

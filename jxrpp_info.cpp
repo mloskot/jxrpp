@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
         std::vector<std::string> args(argv, argv + argc);
 
         std::string filename;
-        jxrpp::codec::tag coder = jxrpp::codec::reference;
+        jxrpp::codec::tag coder = jxrpp::codec::ref;
         if (args.size() == 3 && args[1] == "--wic")
         {
 #ifdef _MSC_VER

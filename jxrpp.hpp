@@ -8,7 +8,7 @@
 #ifndef JXRCXX_JXRCXX_HPP_INCLUDED
 #define JXRCXX_JXRCXX_HPP_INCLUDED
 
-// JPEG XR image coding system - Reference Software
+// JPEG XR image coding system - Reference Software (always enabled)
 #define JXRCXX_IMPLEMENTATION_REF_ENABLED
 
 // JPEG XR support through Windows Imaging Component
@@ -31,7 +31,7 @@ struct codec
     enum tag
     {
 #ifdef JXRCXX_IMPLEMENTATION_REF_ENABLED
-        reference
+        ref
 #endif
 #ifdef JXRCXX_IMPLEMENTATION_WIC_ENABLED
         , wic
